@@ -1,0 +1,29 @@
+[project]
+name = "fasttask"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiosqlite>=0.21.0",
+    "alembic>=1.15.2",
+    "fastapi>=0.115.12",
+    "loguru>=0.7.3",
+    "orjson>=3.10.16",
+    "passlib[bcrypt]>=1.7.4",
+    "pydantic>=2.11.3",
+    "pydantic-settings>=2.8.1",
+    "pyjwt>=2.10.1",
+    "ruff>=0.11.5",
+    "sqlalchemy[asyncio]>=2.0.40",
+    "uvicorn>=0.34.0",
+    "uvloop>=0.21.0",
+]
+
+[dependency-groups]
+dev = [
+    "faker>=37.1.0",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.26.0",
+    "pytest-sugar>=1.0.0",
+]
