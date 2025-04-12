@@ -51,7 +51,7 @@
 
 ## Структура проекта
 
-plaintext
+```plaintext
 FastTask/
 ├── src/
 │   ├── core/          # Настройки, логирование, конфигурации
@@ -59,10 +59,11 @@ FastTask/
 │   ├── routers/       # Маршруты FastAPI
 │   ├── services/      # Бизнес-логика
 │   └── main.py        # Точка входа
-├── test/         # Тесты
+├── test/              # Тесты
 ├── README.md          # Документация
 ├── requirements.txt   # Зависимости
 └── Dockerfile         # Docker-контейнер
+```
 
 ---
 
@@ -70,24 +71,27 @@ FastTask/
 
 ### 1. Клонирование репозитория
 
-bash
+```bash
 git clone <[URL репозитория](https://github.com/nkiteducation/FastTask.git)>
 cd FastTask
+```
 
 ### 2. Установка зависимостей
 
 Создайте виртуальное окружение и установите зависимости:
 
-bash
+```bash
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+```
 
 Или, если пользуетесь uv:
 
-bash
+```bash
 uv sync
 source venv/bin/activate
+```
 
 ### 3. Запуск приложения
 
