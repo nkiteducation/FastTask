@@ -7,4 +7,6 @@ wheels/
 
 .venv
 
-*.env
+.env
+*.toml
+*.yaml
