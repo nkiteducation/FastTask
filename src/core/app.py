@@ -49,9 +49,9 @@ def setup_global_exception_handlers(app: FastAPI):
 
 def create_app():
     app = FastAPI(
-        title=config.app.title,
-        description=config.app.description,
-        version=config.app.version,
+        title=config.project.name,
+        version=config.project.version,
+        description=config.project.description,
         responses=ORJSONResponse,
         lifespan=lifespan,
     )
