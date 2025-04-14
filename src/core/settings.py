@@ -48,4 +48,3 @@ class AppSettings(BaseSettings):
         )
         
 config = AppSettings()
-print(config)
