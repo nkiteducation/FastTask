@@ -6,7 +6,7 @@ from pathlib import Path
 def logger_init():
     Path("logs").mkdir(exist_ok=True)
     Path("logs/.gitignore").write_text("*", encoding="utf-8")
-    
+
     logger.remove()
 
     logger.level("DEBUG", color="<magenta>")

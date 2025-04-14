@@ -12,16 +12,15 @@ class Settings(BaseModel):
     model_config = ConfigDict(frozen=True)
 
 
-class AppSettings(Settings):
-    title: str = Field(default="FastTask")
+class ProjectSettings(Settings):
+    name: str = Field(default="FastTask")
+    version: str = Field(default="1.0.0")
     description: str = Field(
         default="""The project is an API for task management
         (To-Do List) using FastAPI, SQLAlchemy and asynchronous
         database. It includes functionality for creating, updating,
         deleting and filtering tasks with support for users and roles."""
     )
-    version: str = Field(default="1.0.0")
-    debug: bool = Field(default=False)
 
 
 class UvicornSettings(Settings):
@@ -31,7 +30,8 @@ class UvicornSettings(Settings):
 
 
 class Settings(BaseSettings):
-    app: AppSettings = AppSettings()
+    development: bool = Field(default=False)
+    project: ProjectSettings = ProjectSettings()
     uvicorn: UvicornSettings = UvicornSettings()
 
     model_config = SettingsConfigDict(
@@ -53,3 +53,4 @@ class Settings(BaseSettings):
 
 
 config = Settings()
+print(config.project.name)
