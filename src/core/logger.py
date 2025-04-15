@@ -3,7 +3,7 @@ from loguru import logger
 from pathlib import Path
 
 
-def logger_init():
+def logger_init(level: str = "DEBUG") -> None:
     Path("logs").mkdir(exist_ok=True)
     Path("logs/.gitignore").write_text("*", encoding="utf-8")
 
@@ -30,6 +30,7 @@ def logger_init():
         backtrace=True,
         diagnose=True,
         colorize=True,
+        level=level,
         format="<level>{level: <8}</level> | "
         "<blink><black>{name}:{function}:{line}</black></blink> - "
         "<level>{message}</level>",
