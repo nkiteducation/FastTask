@@ -7,10 +7,14 @@ from fastapi.responses import ORJSONResponse
 from loguru import logger
 
 from .settings import config
-
+from database.model import CoreModel
+from database.session import sesssion_manager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    async with sesssion_manager.engine.begin() as conn:
+        await conn.run_sync(CoreModel.metadata.create_all)
+        
     logger.info("Starting up...")
     yield
     logger.info("Shutting down...")
