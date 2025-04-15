@@ -1,9 +1,14 @@
 import asyncio
+
 from contextlib import asynccontextmanager
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.ext.asyncio import async_sessionmaker
-from sqlalchemy.ext.asyncio import async_scoped_session
+
 from loguru import logger
+from sqlalchemy.ext.asyncio import (
+    async_scoped_session,
+    async_sessionmaker,
+    create_async_engine,
+)
+
 from core.settings import config
 
 

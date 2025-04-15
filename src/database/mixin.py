@@ -1,6 +1,8 @@
 import datetime
 import uuid
+
 import sqlalchemy as sa
+
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -15,4 +17,3 @@ class TimestampMixin:
     updated_at: Mapped[datetime.datetime] = mapped_column(
         server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False
     )
-

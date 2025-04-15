@@ -1,12 +1,13 @@
 from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
 from pydantic_settings import (
     BaseSettings,
+    DotEnvSettingsSource,
     SettingsConfigDict,
     TomlConfigSettingsSource,
     YamlConfigSettingsSource,
-    DotEnvSettingsSource,
 )
-from pydantic import BaseModel, ConfigDict
 from sqlalchemy import URL
 
 
