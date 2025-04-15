@@ -29,7 +29,6 @@ class SessionManager:
         self.session = async_scoped_session(
             self.session_local, scopefunc=asyncio.current_task
         )
-        logger.info("SessionManager initialized with database URL: {}", database_url)
 
     @asynccontextmanager
     async def session_scope(self):
