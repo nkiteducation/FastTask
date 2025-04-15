@@ -1,7 +1,9 @@
 import re
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import declared_attr
+
 from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
+
+from .mixin import TimestampMixin, UUIDMixin
 
 
 class CoreModel(DeclarativeBase, AsyncAttrs):
