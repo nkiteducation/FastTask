@@ -27,3 +27,17 @@ dev = [
     "pytest-asyncio>=0.26.0",
     "pytest-sugar>=1.0.0",
 ]
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+fix = true
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I"]
+ignore = ["E203"]
+
+[tool.ruff.lint.isort]
+lines-between-types = 1
+combine-as-imports = true
+force-single-line = false
