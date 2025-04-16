@@ -33,8 +33,9 @@ class SessionManager:
     @asynccontextmanager
     async def session_scope(self):
         session = self.session()
-        logger.info("Session scope started")
+        self.session.session_factory
         try:
+            logger.debug("Session scope started")
             yield session
             logger.debug("Session scope completed successfully")
         except Exception as e:

@@ -19,7 +19,7 @@ class CoreModel(DeclarativeBase, AsyncAttrs):
 class User(CoreModel, UUIDMixin, TimestampMixin):
     user_name: Mapped[str] = mapped_column(unique=True)
     email: Mapped[str] = mapped_column(unique=True)
-    password: Mapped[str] = mapped_column(unique=True)
+    password: Mapped[str] = mapped_column()
     role: Mapped[UserRole] = mapped_column(
         Enum(UserRole, name="role_enum", native_enum=True), default=UserRole.USER
     )

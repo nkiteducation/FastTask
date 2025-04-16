@@ -16,42 +16,27 @@ from .settings import config
 async def lifespan(app: FastAPI):
     async with sesssion_manager.engine.begin() as conn:
         await conn.run_sync(CoreModel.metadata.create_all)
-
-    logger.info("Starting up...")
+    logger.info("Starting up application...")
     yield
-    logger.info("Shutting down...")
+    logger.info("Shutting down application...")
+    await sesssion_manager.dispose()
 
 
 def setup_global_exception_handlers(app: FastAPI):
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):
-        logger.warning(
-            "HTTPException occurred: status_code=%s, detail=%s, path=%s, client=%s",
-            exc.status_code,
-            exc.detail,
-            request.url.path,
-            request.client.host if request.client else "unknown",
-        )
+        logger.error(f"HTTP Exception: {exc.detail}")
         return ORJSONResponse(
             status_code=exc.status_code,
-            content={"error": "HTTP error occurred", "detail": exc.detail},
+            content={"detail": exc.detail},
         )
 
     @app.exception_handler(Exception)
-    async def global_exception_handler(request: Request, exc: Exception):
-        logger.error(
-            "Unhandled Exception: type=%s, path=%s, client=%s, detail=%s",
-            type(exc).__name__,
-            request.url.path,
-            request.client.host if request.client else "unknown",
-            str(exc),
-        )
+    async def general_exception_handler(request: Request, exc: Exception):
+        logger.exception("Unhandled error occurred:")
         return ORJSONResponse(
             status_code=500,
-            content={
-                "error": "Internal Server Error",
-                "detail": "An unexpected error occurred. Please try again later.",
-            },
+            content={"detail": "Internal Server Error"},
         )
 
 
@@ -60,7 +45,7 @@ def create_app():
         title=config.project.name,
         version=config.project.version,
         description=config.project.description,
-        responses=ORJSONResponse,
+        default_response_class=ORJSONResponse,
         lifespan=lifespan,
     )
 
@@ -77,4 +62,5 @@ def create_app():
         GZipMiddleware,
         minimum_size=1000,
     )
+
     return app
