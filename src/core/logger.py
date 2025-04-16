@@ -1,7 +1,9 @@
 import sys
+
 from pathlib import Path
-from loguru import logger
 from typing import Optional
+
+from loguru import logger
 
 
 def logger_init(
