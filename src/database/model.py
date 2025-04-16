@@ -1,7 +1,10 @@
 import re
 
+from sqlalchemy import Enum
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
+
+from database.enum import UserRole
 
 from .mixin import TimestampMixin, UUIDMixin
 
@@ -17,4 +20,6 @@ class User(CoreModel, UUIDMixin, TimestampMixin):
     user_name: Mapped[str] = mapped_column(unique=True)
     email: Mapped[str] = mapped_column(unique=True)
     password: Mapped[str] = mapped_column(unique=True)
-    admin: Mapped[bool] = mapped_column(default=False)
+    role: Mapped[UserRole] = mapped_column(
+        Enum(UserRole, name="role_enum", native_enum=True), default=UserRole.USER
+    )
