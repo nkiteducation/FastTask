@@ -10,3 +10,4 @@ wheels/
 .env
 *.toml
 *.yaml
+*.pem
