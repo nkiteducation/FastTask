@@ -42,7 +42,9 @@ def logger_init(
         diagnose=True,
         colorize=True,
         level=level,
-        format="<level>{level: <8}</level> | <blink><black>{name}:{function}:{line}</black></blink> - <level>{message}</level>",
+        format="""<level>{level: <8}</level> |
+        <blink><black>{name}:{function}:{line}</black></blink> -
+        <level>{message}</level>""",
     )
 
     logger.add(
@@ -51,6 +53,9 @@ def logger_init(
         retention=log_file_retention,
         backtrace=True,
         diagnose=True,
-        format="{time:YYYY-MM-DD at HH:mm:ss} | {level: <8}| {name}:{function}:{line} | {message}",
+        format="""{time:YYYY-MM-DD at HH:mm:ss} |
+        {level: <8} |
+        {name}:{function}:{line} |
+        {message}""",
         compression=log_file_compression,
     )

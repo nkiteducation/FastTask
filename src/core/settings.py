@@ -1,6 +1,6 @@
+from pathlib import Path
 from typing import Optional
 
-from pathlib import Path
 from pydantic import BaseModel, ConfigDict
 from pydantic_settings import (
     BaseSettings,
@@ -56,10 +56,12 @@ class DatabaseSettings(Settings):
 
     URL: URLSettings = URLSettings()
 
+
 class AuthJWTSettings(Settings):
     private_key_path: Path = "./api/auth/jwt-private.key"
     public_key_path: Path = "./api/auth/jwt-public.key"
     algorithm: str = "RS256"
+
 
 class AppSettings(BaseSettings):
     development: bool = False
