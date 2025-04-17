@@ -1,5 +1,6 @@
 from typing import Optional
 
+from pathlib import Path
 from pydantic import BaseModel, ConfigDict
 from pydantic_settings import (
     BaseSettings,
@@ -55,6 +56,10 @@ class DatabaseSettings(Settings):
 
     URL: URLSettings = URLSettings()
 
+class AuthJWTSettings(Settings):
+    private_key_path: Path = "./api/auth/jwt-private.key"
+    public_key_path: Path = "./api/auth/jwt-public.key"
+    algorithm: str = "RS256"
 
 class AppSettings(BaseSettings):
     development: bool = False
@@ -62,6 +67,7 @@ class AppSettings(BaseSettings):
     project: ProjectSettings = ProjectSettings()
     uvicorn: UvicornSettings = UvicornSettings()
     database: DatabaseSettings = DatabaseSettings()
+    jwt: AuthJWTSettings = AuthJWTSettings()
 
     model_config = SettingsConfigDict(
         extra="ignore",
