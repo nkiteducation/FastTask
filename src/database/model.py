@@ -1,7 +1,8 @@
-import datetime
 import enum
 import re
-import uuid
+
+from datetime import datetime
+from uuid import UUID
 
 import sqlalchemy as sa
 
@@ -43,44 +44,56 @@ class Status(enum.Enum):
     IN_PROGRESS = "in_progress"
     DONE = "done"
 
+
 # -------------------- MODELS --------------------
 class User(CoreModel, UUIDMixin, TimestampMixin):
     name: Mapped[str] = mapped_column(sa.String(50))
     email: Mapped[str] = mapped_column(sa.String(100), unique=True)
     password: Mapped[str] = mapped_column(sa.String(100))
-    
-    rooms: Mapped[list["RoomMembership"]] = relationship("RoomMembership", back_populates="user")
-    assignments: Mapped[list["Task"]] = relationship("Task", back_populates="assigned_to")
-    
+
+    rooms: Mapped[list["RoomMembership"]] = relationship(
+        "RoomMembership", back_populates="user"
+    )
+    assignments: Mapped[list["Task"]] = relationship(
+        "Task", back_populates="assigned_to"
+    )
+
+
 class Task(UUIDMixin, TimestampMixin, CoreModel):
-    title: Mapped[str] = mapped_column(sa.String, )
+    title: Mapped[str] = mapped_column(
+        sa.String,
+    )
     description: Mapped[str | None] = mapped_column(sa.Text)
-    deadline: Mapped[datetime.datetime | None] = mapped_column(sa.DateTime)
+    deadline: Mapped[datetime | None] = mapped_column(sa.DateTime)
     priority: Mapped[Priority] = mapped_column(Enum(Priority), default=Priority.MEDIUM)
     status: Mapped[Status] = mapped_column(Enum(Status), default=Status.TODO)
-    
-    room_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("room.id"))
-    created_by_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("user.id"))
-    assigned_to_id: Mapped[uuid.UUID | None] = mapped_column(sa.ForeignKey("user.id"))
-    
+
+    room_id: Mapped[UUID] = mapped_column(sa.ForeignKey("room.id"))
+    created_by_id: Mapped[UUID] = mapped_column(sa.ForeignKey("user.id"))
+    assigned_to_id: Mapped[UUID | None] = mapped_column(sa.ForeignKey("user.id"))
+
     created_by: Mapped["User"] = relationship("User")
     assigned_to: Mapped["User"] = relationship("User", back_populates="assignments")
     room: Mapped["Room"] = relationship("Room", back_populates="tasks")
-    
+
+
 class Room(UUIDMixin, TimestampMixin, CoreModel):
     name: Mapped[str] = mapped_column(sa.String(50))
     description: Mapped[str | None] = mapped_column(sa.Text)
-    
-    created_by_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("user.id"))
-    
+
+    created_by_id: Mapped[UUID] = mapped_column(sa.ForeignKey("user.id"))
+
     created_by: Mapped["User"] = relationship("User")
-    members: Mapped[list["RoomMembership"]] = relationship("RoomMembership", back_populates="room")
+    members: Mapped[list["RoomMembership"]] = relationship(
+        "RoomMembership", back_populates="room"
+    )
     tasks: Mapped[list["Task"]] = relationship("Task", back_populates="room")
-    
+
+
 class RoomMembership(TimestampMixin, CoreModel):
-    user_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("user.id"), primary_key=True)
-    room_id: Mapped[uuid.UUID] = mapped_column(sa.ForeignKey("room.id"), primary_key=True)
-    
+    user_id: Mapped[UUID] = mapped_column(sa.ForeignKey("user.id"), primary_key=True)
+    room_id: Mapped[UUID] = mapped_column(sa.ForeignKey("room.id"), primary_key=True)
+
     role: Mapped[Role] = mapped_column(Enum(Role), nullable=False, default=Role.USER)
 
     user: Mapped["User"] = relationship("User", back_populates="rooms")
