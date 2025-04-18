@@ -60,9 +60,7 @@ class User(CoreModel, UUIDMixin, TimestampMixin):
 
 
 class Task(UUIDMixin, TimestampMixin, CoreModel):
-    title: Mapped[str] = mapped_column(
-        sa.String,
-    )
+    title: Mapped[str] = mapped_column(sa.String)
     description: Mapped[str | None] = mapped_column(sa.Text)
     deadline: Mapped[datetime | None] = mapped_column(sa.DateTime)
     priority: Mapped[Priority] = mapped_column(Enum(Priority), default=Priority.MEDIUM)
@@ -75,7 +73,13 @@ class Task(UUIDMixin, TimestampMixin, CoreModel):
     created_by: Mapped["User"] = relationship("User")
     assigned_to: Mapped["User"] = relationship("User", back_populates="assignments")
     room: Mapped["Room"] = relationship("Room", back_populates="tasks")
+    tag: Mapped["Tag"] = relationship("Tag", back_populates="tasks")
 
+class Tag(UUIDMixin, TimestampMixin, CoreModel):
+    name: Mapped[str] = mapped_column(sa.String(50))
+    task_id: Mapped[UUID | None] = mapped_column(sa.ForeignKey("task.id"))
+
+    tasks: Mapped[list["Task"]] = relationship("Task", back_populates="tag")
 
 class Room(UUIDMixin, TimestampMixin, CoreModel):
     name: Mapped[str] = mapped_column(sa.String(50))
