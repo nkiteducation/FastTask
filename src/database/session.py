@@ -12,14 +12,12 @@ from sqlalchemy.ext.asyncio import (
 
 class SessionManager:
     def __init__(
-        self, database_url: str, pool_size: int, max_overflow: int, pool_timeout: int
+        self, database_url: str, **engine_kwargs: dict
     ):
         self.engine = create_async_engine(
             database_url,
-            pool_size=pool_size,
-            max_overflow=max_overflow,
-            pool_timeout=pool_timeout,
             future=True,
+            **engine_kwargs,
         )
         self.session_local = async_sessionmaker(
             bind=self.engine, expire_on_commit=False
