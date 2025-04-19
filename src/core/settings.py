@@ -11,6 +11,8 @@ from pydantic_settings import (
 )
 from sqlalchemy import URL
 
+from database.session import SessionManager
+
 
 class Settings(BaseModel):
     model_config = ConfigDict(frozen=True)
@@ -94,3 +96,9 @@ class AppSettings(BaseSettings):
 
 
 config = AppSettings()
+session_manager = SessionManager(
+    database_url=config.database.URL.url,
+    pool_size=config.database.poolSize,
+    max_overflow=config.database.maxOverflow,
+    pool_timeout=config.database.poolTimeout,
+)

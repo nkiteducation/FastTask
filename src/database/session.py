@@ -9,8 +9,6 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from core.settings import config
-
 
 class SessionManager:
     def __init__(
@@ -50,11 +48,3 @@ class SessionManager:
     async def dispose(self):
         await self.engine.dispose()
         logger.info("Engine disposed")
-
-
-sesssion_manager = SessionManager(
-    config.database.URL.url,
-    config.database.poolSize,
-    config.database.maxOverflow,
-    config.database.poolTimeout,
-)

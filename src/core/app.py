@@ -7,19 +7,18 @@ from fastapi.responses import ORJSONResponse
 from loguru import logger
 
 from database.model import CoreModel
-from database.session import sesssion_manager
 
-from .settings import config
+from .settings import config, session_manager
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with sesssion_manager.engine.begin() as conn:
+    async with session_manager.engine.begin() as conn:
         await conn.run_sync(CoreModel.metadata.create_all)
     logger.info("Starting up application...")
     yield
     logger.info("Shutting down application...")
-    await sesssion_manager.dispose()
+    await session_manager.dispose()
 
 
 def setup_global_exception_handlers(app: FastAPI):
