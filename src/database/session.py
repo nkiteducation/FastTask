@@ -11,9 +11,7 @@ from sqlalchemy.ext.asyncio import (
 
 
 class SessionManager:
-    def __init__(
-        self, database_url: str, **engine_kwargs: dict
-    ):
+    def __init__(self, database_url: str, **engine_kwargs: dict):
         self.engine = create_async_engine(
             database_url,
             future=True,

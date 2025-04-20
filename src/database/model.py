@@ -6,7 +6,7 @@ from uuid import UUID
 
 import sqlalchemy as sa
 
-from sqlalchemy import Enum
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Table, func
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -46,59 +46,34 @@ class Status(enum.Enum):
 
 
 # -------------------- MODELS --------------------
-class User(CoreModel, UUIDMixin, TimestampMixin):
-    name: Mapped[str] = mapped_column(sa.String(50))
-    email: Mapped[str] = mapped_column(sa.String(100), unique=True)
-    password: Mapped[str] = mapped_column(sa.String(100))
+user_tasks = Table(
+    "user-tasks",
+    CoreModel.metadata,
+    Column("user_id", ForeignKey("user.id"), primary_key=True),
+    Column("task_id", ForeignKey("task.id"), primary_key=True),
+)
 
-    rooms: Mapped[list["RoomMembership"]] = relationship(
-        "RoomMembership", back_populates="user"
+
+class User(CoreModel, TimestampMixin, UUIDMixin):
+    name: Mapped[str]
+    email: Mapped[str]
+    password_hesh: Mapped[str]
+    role: Mapped[Role]
+
+    tasks: Mapped[list["Task"]] = relationship(
+        secondary=user_tasks,
+        back_populates="user_tasks",
     )
-    assignments: Mapped[list["Task"]] = relationship(
-        "Task", back_populates="assigned_to"
+
+
+class Task(CoreModel, TimestampMixin, UUIDMixin):
+    title: Mapped[str]
+    description: Mapped[str | None]
+    deadline: Mapped[datetime | None]
+    priority: Mapped[Priority] = mapped_column(default=Priority.MEDIUM)
+    status: Mapped[Status] = mapped_column(default=Status.TODO)
+
+    user_tasks: Mapped["User"] = relationship(
+        secondary=user_tasks,
+        back_populates="tasks",
     )
-
-
-class Task(UUIDMixin, TimestampMixin, CoreModel):
-    title: Mapped[str] = mapped_column(sa.String)
-    description: Mapped[str | None] = mapped_column(sa.Text)
-    deadline: Mapped[datetime | None] = mapped_column(sa.DateTime)
-    priority: Mapped[Priority] = mapped_column(Enum(Priority), default=Priority.MEDIUM)
-    status: Mapped[Status] = mapped_column(Enum(Status), default=Status.TODO)
-
-    room_id: Mapped[UUID] = mapped_column(sa.ForeignKey("room.id"))
-    created_by_id: Mapped[UUID] = mapped_column(sa.ForeignKey("user.id"))
-    assigned_to_id: Mapped[UUID | None] = mapped_column(sa.ForeignKey("user.id"))
-
-    created_by: Mapped["User"] = relationship("User")
-    assigned_to: Mapped["User"] = relationship("User", back_populates="assignments")
-    room: Mapped["Room"] = relationship("Room", back_populates="tasks")
-    tag: Mapped["Tag"] = relationship("Tag", back_populates="tasks")
-
-class Tag(UUIDMixin, TimestampMixin, CoreModel):
-    name: Mapped[str] = mapped_column(sa.String(50))
-    task_id: Mapped[UUID | None] = mapped_column(sa.ForeignKey("task.id"))
-
-    tasks: Mapped[list["Task"]] = relationship("Task", back_populates="tag")
-
-class Room(UUIDMixin, TimestampMixin, CoreModel):
-    name: Mapped[str] = mapped_column(sa.String(50))
-    description: Mapped[str | None] = mapped_column(sa.Text)
-
-    created_by_id: Mapped[UUID] = mapped_column(sa.ForeignKey("user.id"))
-
-    created_by: Mapped["User"] = relationship("User")
-    members: Mapped[list["RoomMembership"]] = relationship(
-        "RoomMembership", back_populates="room"
-    )
-    tasks: Mapped[list["Task"]] = relationship("Task", back_populates="room")
-
-
-class RoomMembership(TimestampMixin, CoreModel):
-    user_id: Mapped[UUID] = mapped_column(sa.ForeignKey("user.id"), primary_key=True)
-    room_id: Mapped[UUID] = mapped_column(sa.ForeignKey("room.id"), primary_key=True)
-
-    role: Mapped[Role] = mapped_column(Enum(Role), nullable=False, default=Role.USER)
-
-    user: Mapped["User"] = relationship("User", back_populates="rooms")
-    room: Mapped["Room"] = relationship("Room", back_populates="members")
