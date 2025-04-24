@@ -1,10 +1,10 @@
 import enum
-import re
 
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import Enum as SAEnum, ForeignKey, MetaData
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -14,16 +14,26 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from .mixin import TimestampMixin, UUIDMixin
+from database.mixin import TimestampMixin, UUIDMixin
+
+metadata = MetaData(
+    naming_convention={
+        "pk": "pk_%(table_name)s",
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+        "ix": "ix_%(table_name)s_%(column_0_name)s",
+        "uq": "uq_%(table_name)s_%(column_0_name)s",
+    }
+)
 
 
-# -------------------- CORE MODEL --------------------
 class CoreModel(DeclarativeBase, AsyncAttrs):
+    metadata = metadata
+
     @declared_attr
     def __tablename__(cls) -> str:
-        s1 = re.sub(r"([^_])([A-Z])", r"\1-\2", cls.__name__)
-        return s1.lower()
-
+        name = cls.__name__
+        s1 = "".join(["_" + c.lower() if c.isupper() else c for c in name]).lstrip("_")
+        return s1
 
 # -------------------- ENUMS --------------------
 class Role(enum.Enum):
@@ -44,53 +54,79 @@ class Status(enum.Enum):
 
 
 # -------------------- MODELS --------------------
-class User(CoreModel, TimestampMixin, UUIDMixin):
-    name: Mapped[str]
-    email: Mapped[str]
-    password_hesh: Mapped[str]
-
-    board_links: Mapped[list["UserUsingBoard"]] = relationship(back_populates="user")
-    boards: Mapped[list["Board"]] = relationship(
-        secondary="user-using-board", viewonly=True, back_populates="participants"
-    )
-    assigned_tasks: Mapped[list["Task"]] = relationship(
-        back_populates="assigned_user",
-        cascade="all, delete-orphan",
-        foreign_keys="[Task.assigned_user_id]",
-    )
-
-
-class Board(CoreModel, TimestampMixin, UUIDMixin):
+class Board(CoreModel, UUIDMixin, TimestampMixin):
     title: Mapped[str]
 
-    user_links: Mapped[list["UserUsingBoard"]] = relationship(back_populates="board")
+    users: Mapped[list["UserUsingBoard"]] = relationship(
+        back_populates="board", lazy="selectin"
+    )
     participants: Mapped[list["User"]] = relationship(
-        secondary="user-using-board", viewonly=True, back_populates="boards"
+        secondary="user_using_board",
+        viewonly=True,
+        back_populates="boards",
+        lazy="selectin",
     )
     tasks: Mapped[list["Task"]] = relationship(
-        back_populates="board", cascade="all, delete-orphan"
+        back_populates="board",
+        order_by="Task.deadline",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
 
-class Task(CoreModel, TimestampMixin, UUIDMixin):
+class Task(CoreModel, UUIDMixin, TimestampMixin):
     title: Mapped[str]
     description: Mapped[str | None]
     deadline: Mapped[datetime | None]
-    priority: Mapped[Priority] = mapped_column(default=Priority.MEDIUM)
-    status: Mapped[Status] = mapped_column(default=Status.TODO)
-
-    board_id: Mapped[UUID] = mapped_column(ForeignKey("board.id"))
-    board: Mapped["Board"] = relationship(back_populates="task")
-    assigned_user_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("user.id"), nullable=True
+    priority: Mapped[Priority] = mapped_column(
+        SAEnum(Priority, name="priority_enum"), default=Priority.MEDIUM
     )
-    assigned_user: Mapped["User"] = relationship(back_populates="assigned_tasks")
+    status: Mapped[Status] = mapped_column(
+        SAEnum(Status, name="status_enum"), default=Status.TODO
+    )
+
+    board_id: Mapped[UUID] = mapped_column(ForeignKey("board.id", ondelete="CASCADE"))
+    board: Mapped["Board"] = relationship(back_populates="tasks", lazy="selectin")
+
+    assigned_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("user.id", ondelete="SET NULL"), nullable=True
+    )
+    assigned_user: Mapped[Optional["User"]] = relationship(
+        back_populates="assigned_tasks", lazy="selectin"
+    )
 
 
 class UserUsingBoard(CoreModel):
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), primary_key=True)
-    board_id: Mapped[UUID] = mapped_column(ForeignKey("board.id"), primary_key=True)
-    role: Mapped[Role] = mapped_column(default=Role.USER)
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE"), primary_key=True
+    )
+    board_id: Mapped[UUID] = mapped_column(
+        ForeignKey("board.id", ondelete="CASCADE"), primary_key=True
+    )
+    role: Mapped[Role] = mapped_column(
+        SAEnum(Role, name="role_enum"), default=Role.USER
+    )
 
-    user: Mapped["User"] = relationship(back_populates="board_links")
-    board: Mapped["Board"] = relationship(back_populates="user_links")
+    user: Mapped["User"] = relationship(back_populates="board_links", lazy="selectin")
+    board: Mapped["Board"] = relationship(back_populates="users", lazy="selectin")
+
+
+class User(CoreModel, UUIDMixin, TimestampMixin):
+    name: Mapped[str]
+    email: Mapped[str] = mapped_column(unique=True)
+    password_hash: Mapped[str]
+
+    board_links: Mapped[list["UserUsingBoard"]] = relationship(
+        back_populates="user", lazy="selectin"
+    )
+    boards: Mapped[list["Board"]] = relationship(
+        secondary="user_using_board",
+        viewonly=True,
+        back_populates="participants",
+        lazy="selectin",
+    )
+    assigned_tasks: Mapped[list["Task"]] = relationship(
+        back_populates="assigned_user",
+        foreign_keys=[Task.assigned_user_id],
+        lazy="selectin",
+    )
