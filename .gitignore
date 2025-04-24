@@ -11,3 +11,4 @@ wheels/
 *.toml
 *.yaml
 *.pem
+*.db
