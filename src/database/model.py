@@ -2,6 +2,7 @@ import enum
 import re
 
 from datetime import datetime
+from uuid import UUID
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.ext.asyncio import AsyncAttrs
@@ -48,20 +49,24 @@ class User(CoreModel, TimestampMixin, UUIDMixin):
     email: Mapped[str]
     password_hesh: Mapped[str]
 
-    board_links: Mapped[list["BoardInUser"]] = relationship(back_populates="user")
+    board_links: Mapped[list["UserUsingBoard"]] = relationship(back_populates="user")
     boards: Mapped[list["Board"]] = relationship(
-        secondary="board_users", viewonly=True, back_populates="participants"
+        secondary="user-using-board", viewonly=True, back_populates="participants"
+    )
+    assigned_tasks: Mapped[list["Task"]] = relationship(
+        back_populates="assigned_user",
+        cascade="all, delete-orphan",
+        foreign_keys="[Task.assigned_user_id]",
     )
 
 
 class Board(CoreModel, TimestampMixin, UUIDMixin):
     title: Mapped[str]
 
-    user_links: Mapped[list["BoardInUser"]] = relationship(back_populates="board")
+    user_links: Mapped[list["UserUsingBoard"]] = relationship(back_populates="board")
     participants: Mapped[list["User"]] = relationship(
-        secondary="board_users", viewonly=True, back_populates="boards"
+        secondary="user-using-board", viewonly=True, back_populates="boards"
     )
-
     tasks: Mapped[list["Task"]] = relationship(
         back_populates="board", cascade="all, delete-orphan"
     )
@@ -74,15 +79,17 @@ class Task(CoreModel, TimestampMixin, UUIDMixin):
     priority: Mapped[Priority] = mapped_column(default=Priority.MEDIUM)
     status: Mapped[Status] = mapped_column(default=Status.TODO)
 
-    board_id: Mapped[int] = mapped_column(ForeignKey("boards.id"))
-    board: Mapped["Board"] = relationship(back_populates="tasks")
+    board_id: Mapped[UUID] = mapped_column(ForeignKey("board.id"))
+    board: Mapped["Board"] = relationship(back_populates="task")
+    assigned_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("user.id"), nullable=True
+    )
+    assigned_user: Mapped["User"] = relationship(back_populates="assigned_tasks")
 
 
-class BoardInUser(CoreModel):
-    __tablename__ = "board_users"
-
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
-    board_id: Mapped[int] = mapped_column(ForeignKey("boards.id"), primary_key=True)
+class UserUsingBoard(CoreModel):
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), primary_key=True)
+    board_id: Mapped[UUID] = mapped_column(ForeignKey("board.id"), primary_key=True)
     role: Mapped[Role] = mapped_column(default=Role.USER)
 
     user: Mapped["User"] = relationship(back_populates="board_links")
