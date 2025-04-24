@@ -35,6 +35,7 @@ class CoreModel(DeclarativeBase, AsyncAttrs):
         s1 = "".join(["_" + c.lower() if c.isupper() else c for c in name]).lstrip("_")
         return s1
 
+
 # -------------------- ENUMS --------------------
 class Role(enum.Enum):
     ADMIN = "admin"

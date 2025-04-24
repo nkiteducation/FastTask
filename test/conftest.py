@@ -17,7 +17,7 @@ from database.session import SessionManager  # noqa: E402
 @pytest_asyncio.fixture(scope="session")
 async def session_manager():
     test_session_manager = SessionManager(
-        database_url="sqlite+aiosqlite:///test.db",
+        database_url="sqlite+aiosqlite:///:memory:",
         connect_args={"check_same_thread": False},
     )
     yield test_session_manager
@@ -28,8 +28,6 @@ async def session_manager():
 async def create_database(session_manager: SessionManager):
     async with session_manager.engine.begin() as conn:
         await conn.run_sync(CoreModel.metadata.create_all)
-        yield
-        await conn.run_sync(CoreModel.metadata.drop_all)
 
 
 @pytest_asyncio.fixture
