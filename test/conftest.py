@@ -1,16 +1,17 @@
-from pathlib import Path
 import sys
 
-import pytest
+from pathlib import Path
+
 import pytest_asyncio
+
 from faker import Faker
 
 ROOT = Path(__file__).resolve().parent.parent / "src"
 sys.path.insert(0, str(ROOT))
 
 
-from database.session import SessionManager
-from database.model import CoreModel
+from database.model import CoreModel  # noqa: E402
+from database.session import SessionManager  # noqa: E402
 
 
 @pytest_asyncio.fixture(scope="session")
