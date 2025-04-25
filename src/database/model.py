@@ -108,7 +108,7 @@ class UserUsingBoard(CoreModel):
         SAEnum(Role, name="role_enum"), default=Role.USER
     )
 
-    user: Mapped["User"] = relationship(back_populates="board_links", lazy="selectin")
+    profil: Mapped["User"] = relationship(back_populates="board_links", lazy="selectin")
     board: Mapped["Board"] = relationship(back_populates="users", lazy="selectin")
 
 
@@ -118,7 +118,7 @@ class User(CoreModel, UUIDMixin, TimestampMixin):
     password_hash: Mapped[str]
 
     board_links: Mapped[list["UserUsingBoard"]] = relationship(
-        back_populates="user", lazy="selectin"
+        back_populates="profil"
     )
     boards: Mapped[list["Board"]] = relationship(
         secondary="user_using_board",

@@ -3,7 +3,7 @@ from uuid import uuid4
 import faker
 import pytest
 
-from database.model import Board, Priority, Status, Task, User
+from database.model import Board, Priority, Status, Task, User, UserUsingBoard, Role
 from database.session import SessionManager
 
 
@@ -20,6 +20,7 @@ async def test_user(fake: faker.Faker, session_manager: SessionManager):
         await session.commit()
         await session.refresh(user)
 
+
 @pytest.mark.asyncio
 async def test_board(fake: faker.Faker, session_manager: SessionManager):
     title = fake.name()
@@ -28,6 +29,7 @@ async def test_board(fake: faker.Faker, session_manager: SessionManager):
         session.add(board)
         await session.commit()
         await session.refresh(board)
+
 
 @pytest.mark.asyncio
 async def test_task(fake: faker.Faker, session_manager: SessionManager):
@@ -43,3 +45,26 @@ async def test_task(fake: faker.Faker, session_manager: SessionManager):
         session.add(task)
         await session.commit()
         await session.refresh(task)
+
+
+@pytest.mark.asyncio
+async def test_user_using_board(fake: faker.Faker, session_manager: SessionManager):
+    fake_user = {
+        "name": fake.name(),
+        "email": fake.email(),
+        "password_hash": fake.password(),
+    }
+    fake_board = {"title": fake.name()}
+    async with session_manager.session_scope() as session:
+        user = User(**fake_user)
+        board = Board(**fake_board)
+        session.add_all([user, board])
+
+        await session.flush()
+
+        link = UserUsingBoard(
+            user_id=user.id,
+            board_id=board.id,
+            role=Role.ADMIN,
+        )
+        session.add(link)
