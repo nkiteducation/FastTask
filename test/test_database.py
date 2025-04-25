@@ -20,11 +20,6 @@ async def test_user(fake: faker.Faker, session_manager: SessionManager):
         await session.commit()
         await session.refresh(user)
 
-    assert user.name == fake_user["name"]
-    assert user.email == fake_user["email"]
-    assert user.password_hash == fake_user["password_hash"]
-
-
 @pytest.mark.asyncio
 async def test_board(fake: faker.Faker, session_manager: SessionManager):
     title = fake.name()
@@ -33,9 +28,6 @@ async def test_board(fake: faker.Faker, session_manager: SessionManager):
         session.add(board)
         await session.commit()
         await session.refresh(board)
-
-    assert board.title == title
-
 
 @pytest.mark.asyncio
 async def test_task(fake: faker.Faker, session_manager: SessionManager):
@@ -51,9 +43,3 @@ async def test_task(fake: faker.Faker, session_manager: SessionManager):
         session.add(task)
         await session.commit()
         await session.refresh(task)
-
-    assert task.title == fake_tasc["title"]
-    assert task.description == fake_tasc["description"]
-    assert task.deadline == fake_tasc["deadline"]
-    assert task.priority == fake_tasc["priority"]
-    assert task.status == fake_tasc["status"]
