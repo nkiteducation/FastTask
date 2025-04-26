@@ -27,7 +27,6 @@ class SessionManager:
     @asynccontextmanager
     async def session_scope(self):
         session = self.session()
-        self.session.session_factory
         try:
             logger.debug("Session scope started")
             yield session
