@@ -87,13 +87,13 @@ class Task(CoreModel, UUIDMixin, TimestampMixin):
     )
 
     board_id: Mapped[UUID] = mapped_column(ForeignKey("board.id", ondelete="CASCADE"))
-    board: Mapped["Board"] = relationship(back_populates="tasks", lazy="selectin")
+    board: Mapped["Board"] = relationship(back_populates="tasks")
 
     assigned_user_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("user.id", ondelete="SET NULL"), nullable=True
     )
     assigned_user: Mapped[Optional["User"]] = relationship(
-        back_populates="assigned_tasks", lazy="selectin"
+        back_populates="assigned_tasks"
     )
 
 
@@ -108,8 +108,8 @@ class UserUsingBoard(CoreModel):
         SAEnum(Role, name="role_enum"), default=Role.USER
     )
 
-    profil: Mapped["User"] = relationship(back_populates="board_links", lazy="selectin")
-    board: Mapped["Board"] = relationship(back_populates="users", lazy="selectin")
+    profil: Mapped["User"] = relationship(back_populates="board_links")
+    board: Mapped["Board"] = relationship(back_populates="users")
 
 
 class User(CoreModel, UUIDMixin, TimestampMixin):
@@ -117,17 +117,14 @@ class User(CoreModel, UUIDMixin, TimestampMixin):
     email: Mapped[str] = mapped_column(unique=True)
     password_hash: Mapped[str]
 
-    board_links: Mapped[list["UserUsingBoard"]] = relationship(
-        back_populates="profil"
-    )
+    board_links: Mapped[list["UserUsingBoard"]] = relationship(back_populates="profil")
     boards: Mapped[list["Board"]] = relationship(
         secondary="user_using_board",
         viewonly=True,
         back_populates="participants",
-        lazy="selectin",
     )
     assigned_tasks: Mapped[list["Task"]] = relationship(
         back_populates="assigned_user",
         foreign_keys=[Task.assigned_user_id],
-        lazy="selectin",
+        order_by="Task.deadline.desc()",
     )

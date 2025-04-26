@@ -3,7 +3,7 @@ from uuid import uuid4
 import faker
 import pytest
 
-from database.model import Board, Priority, Role, Status, Task, User, UserUsingBoard
+from database.model import Board, Priority, Status, Task, User
 from database.session import SessionManager
 
 
@@ -58,13 +58,5 @@ async def test_user_using_board(fake: faker.Faker, session_manager: SessionManag
     async with session_manager.session_scope() as session:
         user = User(**fake_user)
         board = Board(**fake_board)
-        session.add_all([user, board])
-
-        await session.flush()
-
-        link = UserUsingBoard(
-            user_id=user.id,
-            board_id=board.id,
-            role=Role.ADMIN,
-        )
-        session.add(link)
+        user.boards.append(board)
+        await session.commit()
