@@ -3,7 +3,7 @@ from uuid import uuid4
 import faker
 import pytest
 
-from database.model import Board, Priority, Status, Task, User, UserUsingBoard, Role
+from database.model import Board, Priority, Role, Status, Task, User, UserUsingBoard
 from database.session import SessionManager
 
 
