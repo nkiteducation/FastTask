@@ -59,9 +59,9 @@ class DatabaseSettings(Settings):
     URL: URLSettings = URLSettings()
 
 
-class AuthJWTSettings(Settings):
-    private_key_path: Path = "./api/auth/jwt-private.key"
-    public_key_path: Path = "./api/auth/jwt-public.key"
+class AuthJWTSettings(BaseSettings):
+    private_key_path: Path = "src/api/auth/jwt-private.pem"
+    public_key_path: Path = "src/api/auth/jwt-public.pem"
     algorithm: str = "RS256"
 
 
