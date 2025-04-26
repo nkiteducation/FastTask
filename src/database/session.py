@@ -20,26 +20,27 @@ class SessionManager:
         self.session_local = async_sessionmaker(
             bind=self.engine, expire_on_commit=False
         )
-        self.session = async_scoped_session(
+        self.scoped_session = async_scoped_session(
             self.session_local, scopefunc=asyncio.current_task
         )
 
     @asynccontextmanager
     async def session_scope(self):
-        session = self.session()
+        session = self.scoped_session()
+        logger.debug(f"Session started: {session!r}")
         try:
-            logger.debug("Session scope started")
             yield session
-            logger.debug("Session scope completed successfully")
-        except Exception as e:
+            await session.commit()
+        except Exception:
+            logger.exception(f"Error occurred, rolling back session: {session!r}")
             await session.rollback()
-            logger.error("Session scope encountered an error: {}", e, exc_info=True)
-            raise e
+            raise
         finally:
             await session.close()
-            await self.session.remove()
-            logger.debug("Session scope closed and session removed")
+            self.scoped_session.remove()
+            logger.debug(f"Session closed: {session!r}")
 
     async def dispose(self):
         await self.engine.dispose()
         logger.info("Engine disposed")
+
