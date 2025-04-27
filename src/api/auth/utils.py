@@ -20,7 +20,7 @@ def encode_jwt(
     to_encode.update(
         iat=datetime.now(UTC), exp=datetime.now(UTC) + timedelta(minutes=expire_minutes)
     )
-    return jwt.encode(payload=payload, key=private_key, algorithm=algorithm)
+    return jwt.encode(payload=to_encode, key=private_key, algorithm=algorithm)
 
 
 def decode_jwt(
