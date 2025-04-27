@@ -1,7 +1,5 @@
 import asyncio
 
-from contextlib import asynccontextmanager
-
 from loguru import logger
 from sqlalchemy.ext.asyncio import (
     async_scoped_session,
@@ -24,7 +22,6 @@ class SessionManager:
             self.session_local, scopefunc=asyncio.current_task
         )
 
-    @asynccontextmanager
     async def session_scope(self):
         session = self.scoped_session()
         logger.debug(f"Session started: {session!r}")
@@ -43,4 +40,3 @@ class SessionManager:
     async def dispose(self):
         await self.engine.dispose()
         logger.info("Engine disposed")
-
