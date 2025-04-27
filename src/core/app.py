@@ -6,9 +6,9 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import ORJSONResponse
 from loguru import logger
 
+from core.settings import config
 from database.model import CoreModel
-
-from .settings import config, session_manager
+from database.session import session_manager
 
 
 @asynccontextmanager

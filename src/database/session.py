@@ -7,6 +7,8 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from core.settings import config
+
 
 class SessionManager:
     def __init__(self, database_url: str, **engine_kwargs: dict):
@@ -29,14 +31,22 @@ class SessionManager:
             yield session
             await session.commit()
         except Exception:
-            logger.exception(f"Error occurred, rolling back session: {session!r}")
+            logger.error(f"Error occurred, rolling back session: {session!r}")
             await session.rollback()
             raise
         finally:
             await session.close()
-            self.scoped_session.remove()
+            await self.scoped_session.remove()
             logger.debug(f"Session closed: {session!r}")
 
     async def dispose(self):
         await self.engine.dispose()
         logger.info("Engine disposed")
+
+
+session_manager = SessionManager(
+    database_url=config.database.URL.url,
+    pool_size=config.database.poolSize,
+    max_overflow=config.database.maxOverflow,
+    pool_timeout=config.database.poolTimeout,
+)
