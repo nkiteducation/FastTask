@@ -42,8 +42,8 @@ def logger_init(
         colorize=True,
         level=level,
         format="<level>{level: <8}</level> | "
-               "<cyan>{name}:{function}:{line}</cyan> - "
-               "<level>{message}</level>",
+        "<cyan>{name}:{function}:{line}</cyan> - "
+        "<level>{message}</level>",
     )
 
     logger.add(
@@ -54,7 +54,7 @@ def logger_init(
         backtrace=False,
         diagnose=False,
         format="{time:YYYY-MM-DD HH:mm:ss} | "
-               "{level: <8} | {name}:{function}:{line} | "
-               "{message}",
+        "{level: <8} | {name}:{function}:{line} | "
+        "{message}",
         compression=log_file_compression,
     )
