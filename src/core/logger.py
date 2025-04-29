@@ -24,7 +24,6 @@ def logger_init(
 
     logger.remove()
 
-    # Define log levels with colors
     log_levels = {
         "DEBUG": "<magenta>",
         "INFO": "<green>",
@@ -38,19 +37,24 @@ def logger_init(
 
     logger.add(
         sys.stderr,
-        backtrace=True,
-        diagnose=True,
+        backtrace=False,
+        diagnose=False,
         colorize=True,
         level=level,
-        format="<level>{level: <8}</level> | <blink><black>{name}:{function}:{line}</black></blink> -<level>{message}</level>",  # noqa: E501
+        format="<level>{level: <8}</level> | "
+               "<cyan>{name}:{function}:{line}</cyan> - "
+               "<level>{message}</level>",
     )
 
     logger.add(
         f"{log_dir}/{log_file_format}",
         rotation=log_file_rotation,
         retention=log_file_retention,
-        backtrace=True,
-        diagnose=True,
-        format="{time:YYYY-MM-DD at HH:mm:ss} | {level: <8} | {name}:{function}:{line} |{message}",  # noqa: E501
+        enqueue=True,
+        backtrace=False,
+        diagnose=False,
+        format="{time:YYYY-MM-DD HH:mm:ss} | "
+               "{level: <8} | {name}:{function}:{line} | "
+               "{message}",
         compression=log_file_compression,
     )
