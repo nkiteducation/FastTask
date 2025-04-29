@@ -31,7 +31,7 @@ class SessionManager:
             yield session
             await session.commit()
         except Exception as exc:
-            logger.error(f"Error: {exc}, rolling back session: {session}")
+            logger.exception(f"Session erorre: {exc}")
             await session.rollback()
             raise
         finally:
