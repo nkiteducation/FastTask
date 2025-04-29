@@ -26,18 +26,18 @@ class SessionManager:
 
     async def session_scope(self):
         session = self.scoped_session()
-        logger.debug(f"Session started: {session!r}")
+        logger.debug(f"Session started: {session}")
         try:
             yield session
             await session.commit()
-        except Exception:
-            logger.error(f"Error occurred, rolling back session: {session!r}")
+        except Exception as exc:
+            logger.error(f"Error: {exc}, rolling back session: {session}")
             await session.rollback()
             raise
         finally:
             await session.close()
             await self.scoped_session.remove()
-            logger.debug(f"Session closed: {session!r}")
+            logger.debug(f"Session closed: {session}")
 
     async def dispose(self):
         await self.engine.dispose()
