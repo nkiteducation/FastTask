@@ -20,7 +20,7 @@ async def all_user(session=Depends(session_manager.session_scope)):
 
 @router.get("/{user_id}", response_model=UserReturn)
 async def get_item(
-    user_id: Annotated[UUID, Path], session=Depends(session_manager.session_scope)
+    user_id: UUID, session=Depends(session_manager.session_scope)
 ):
     user = await get_user(user_id, session)
     return UserReturn.model_validate(user, from_attributes=True)
@@ -28,7 +28,7 @@ async def get_item(
 
 @router.put("/items/{user_id}", response_model=UserReturn)
 async def update_item(
-    user_id: Annotated[UUID, Path],
+    user_id: UUID,
     updated: UserInput,
     session=Depends(session_manager.session_scope),
 ):
@@ -41,7 +41,7 @@ async def update_item(
 
 @router.delete("/items/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_item(
-    user_id: Annotated[UUID, Path],
+    user_id: UUID,
     session=Depends(session_manager.session_scope),
 ):
     await delete_user(user_id, session)
