@@ -1,7 +1,6 @@
-from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Path, status
+from fastapi import APIRouter, Depends, status
 
 from api.v1.shemas import UserInput, UserReturn
 from api.v1.user.service import delete_user, get_all_users, get_user, update_user
