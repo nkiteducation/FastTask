@@ -78,19 +78,22 @@ class Board(CoreModel, UUIDMixin, TimestampMixin):
 class Task(CoreModel, UUIDMixin, TimestampMixin):
     title: Mapped[str]
     description: Mapped[str | None]
-    deadline: Mapped[datetime | None]
+
+    deadline: Mapped[datetime | None] = mapped_column(index=True)
     priority: Mapped[Priority] = mapped_column(
         SAEnum(Priority, name="priority_enum"), default=Priority.MEDIUM
     )
     status: Mapped[Status] = mapped_column(
-        SAEnum(Status, name="status_enum"), default=Status.TODO
+        SAEnum(Status, name="status_enum"), default=Status.TODO, index=True
     )
 
-    board_id: Mapped[UUID] = mapped_column(ForeignKey("board.id", ondelete="CASCADE"))
+    board_id: Mapped[UUID] = mapped_column(
+        ForeignKey("board.id", ondelete="CASCADE"), index=True
+    )
     board: Mapped["Board"] = relationship(back_populates="tasks")
 
     assigned_user_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("user.id", ondelete="SET NULL"), nullable=True
+        ForeignKey("user.id", ondelete="SET NULL"), nullable=True, index=True
     )
     assigned_user: Mapped[Optional["User"]] = relationship(
         back_populates="assigned_tasks"
