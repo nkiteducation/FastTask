@@ -1,46 +1,63 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from api.v1.shemas import UserInput, UserReturn
-from api.v1.user.service import delete_user, get_all_users, get_user, update_user
+from api.v1.shemas import UserInput, UserReturn, UserUpdate
+from api.v1.user.service import (
+    delete_user,
+    get_all_users,
+    get_user,
+    update_user,
+)
 from database.session import session_manager
 
-router = APIRouter(prefix="/user")
+router = APIRouter(prefix="/user", tags=["Users"])
 
 
 @router.get("/", response_model=list[UserReturn])
-async def all_user(session=Depends(session_manager.session_scope)):
-    sequence_users = await get_all_users(session)
-    return [
-        UserReturn.model_validate(user, from_attributes=True) for user in sequence_users
-    ]
+async def list_users(session=Depends(session_manager.session_scope)):
+    users = await get_all_users(session)
+    return [UserReturn.model_validate(user) for user in users]
 
 
 @router.get("/{user_id}", response_model=UserReturn)
-async def get_item(
+async def retrieve_user(user_id: UUID, session=Depends(session_manager.session_scope)):
+    user = await get_user(user_id, session)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return UserReturn.model_validate(user)
+
+
+@router.put("/{user_id}", response_model=UserReturn)
+async def full_update_user(
+    user_id: UUID,
+    data: UserInput,
+    session=Depends(session_manager.session_scope),
+):
+    updated = await update_user(user_id, data.model_dump(), session)
+    if not updated:
+        raise HTTPException(status_code=404, detail="User not found")
+    return UserReturn.model_validate(updated)
+
+
+@router.patch("/{user_id}", response_model=UserReturn)
+async def partial_update_user_route(
+    user_id: UUID,
+    data: UserUpdate,
+    session=Depends(session_manager.session_scope),
+):
+    updated = await update_user(
+        user_id, data.model_dump(exclude_unset=True), session
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="User not found")
+    return UserReturn.model_validate(updated)
+
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user_route(
     user_id: UUID, session=Depends(session_manager.session_scope)
 ):
-    user = await get_user(user_id, session)
-    return UserReturn.model_validate(user, from_attributes=True)
-
-
-@router.put("/items/{user_id}", response_model=UserReturn)
-async def update_item(
-    user_id: UUID,
-    updated: UserInput,
-    session=Depends(session_manager.session_scope),
-):
-    up_user = await update_user(
-        user_id=user_id,
-        update_data=updated.model_dump(),
-        session=session,
-    )
-    return UserReturn.model_validate(up_user, from_attributes=True)
-
-@router.delete("/items/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_item(
-    user_id: UUID,
-    session=Depends(session_manager.session_scope),
-):
-    await delete_user(user_id, session)
+    deleted = await delete_user(user_id, session)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="User not found")
