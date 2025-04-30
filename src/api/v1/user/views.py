@@ -46,9 +46,7 @@ async def partial_update_user_route(
     data: UserUpdate,
     session=Depends(session_manager.session_scope),
 ):
-    updated = await update_user(
-        user_id, data.model_dump(exclude_unset=True), session
-    )
+    updated = await update_user(user_id, data.model_dump(exclude_unset=True), session)
     if not updated:
         raise HTTPException(status_code=404, detail="User not found")
     return UserReturn.model_validate(updated)
