@@ -116,7 +116,7 @@ class UserUsingBoard(CoreModel):
 
 
 class User(CoreModel, UUIDMixin, TimestampMixin):
-    name: Mapped[str]
+    name: Mapped[str] = mapped_column(unique=True)
     email: Mapped[str] = mapped_column(unique=True)
     password_hash: Mapped[str]
 
