@@ -5,12 +5,12 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, EmailStr, SecretStr
 
 
-class BaseUser(BaseModel):
+class UserBase(BaseModel):
     name: str
     email: EmailStr
 
 
-class UserInput(BaseUser):
+class UserCreate(UserBase):
     password: SecretStr
 
 
@@ -20,9 +20,13 @@ class UserUpdate(BaseModel):
     password: Optional[SecretStr] = None
 
 
-class UserReturn(BaseUser):
+class UserRead(UserBase):
     id: UUID
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserDTO(UserRead):
+    password_hash: SecretStr

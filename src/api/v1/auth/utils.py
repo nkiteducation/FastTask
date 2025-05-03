@@ -15,11 +15,14 @@ _ALGORITHM = config.jwt.algorithm
 _ISSUER = config.project.name
 _AUDIENCE = "my-api"
 
+
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
+
 def verify_password(password: str, hashed: str) -> bool:
     return pwd_context.verify(password, hashed)
+
 
 def encode_jwt(payload: dict, expire_delta: timedelta = timedelta(minutes=15)) -> str:
     now = datetime.now(timezone.utc)
@@ -33,11 +36,12 @@ def encode_jwt(payload: dict, expire_delta: timedelta = timedelta(minutes=15)) -
     }
     return jwt.encode(to_encode, key=_PRIVATE_KEY, algorithm=_ALGORITHM)
 
+
 def decode_jwt(token: str) -> dict:
-        return jwt.decode(
-            jwt=token,
-            key=_PUBLIC_KEY,
-            algorithms=[_ALGORITHM],
-            audience=_AUDIENCE,
-            issuer=_ISSUER,
-        )
+    return jwt.decode(
+        jwt=token,
+        key=_PUBLIC_KEY,
+        algorithms=[_ALGORITHM],
+        audience=_AUDIENCE,
+        issuer=_ISSUER,
+    )
