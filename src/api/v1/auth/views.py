@@ -2,7 +2,10 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import (
+    HTTPAuthorizationCredentials,
+    HTTPBearer,
+)
 from jwt.exceptions import InvalidTokenError
 from pydantic import BaseModel, EmailStr, SecretStr
 from sqlalchemy import sql
@@ -88,6 +91,7 @@ def auth_user_issue_jwt(
         access_token=token,
         token_type="Bearer",
     )
+
 
 @router.get("/users/me/")
 def auth_user_check_self_info(
