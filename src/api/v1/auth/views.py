@@ -5,13 +5,16 @@ from fastapi import APIRouter, Depends, Form, HTTPException, status
 from fastapi.security import (
     HTTPAuthorizationCredentials,
     HTTPBearer,
+    OAuth2PasswordBearer,
 )
 from jwt.exceptions import InvalidTokenError
 from pydantic import BaseModel, EmailStr, SecretStr
 from sqlalchemy import sql
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import 	IntegrityError
 
-from api.v1.auth.utils import decode_jwt, encode_jwt, verify_password
+from api.v1.auth.utils import decode_jwt, encode_jwt, verify_password, get_password_hash
+from api.v1.shemas import UserDTO, UserCreate
 from database.model import User
 from database.session import session_manager
 
@@ -23,83 +26,55 @@ class TokenInfo(BaseModel):
     token_type: str
 
 
-class AuthUser(BaseModel):
-    name: str
-    email: EmailStr
-    id: UUID
-
-
 router = APIRouter(prefix="/jwt", tags=["JWT"])
 
+# @router.post("/auth/login", response_model=TokenInfo)
+# def login_user(...):
+#    pass
 
-async def validate_auth_user(
-    email: Annotated[EmailStr, Form],
-    password: Annotated[SecretStr, Form],
-    session: AsyncSession = Depends(session_manager.session_scope),
-):
-    unauthed_exc = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="invalid username or password",
+async def register_user_in_db(
+    name: str,
+    email: EmailStr,
+    password: SecretStr,
+    session: AsyncSession
+) -> User:
+    user = User(
+        name=name,
+        email=email,
+        password_hash=get_password_hash(password.get_secret_value()),
     )
-
-    if not (
-        user := (
-            await session.execute(sql.select(User).where(User.email == email))
-        ).scalar_one_or_none()
-    ):
-        raise unauthed_exc
-    elif not verify_password(password.get_secret_value(), user.password_hash):
-        raise unauthed_exc
-
-    return AuthUser.model_validate(user, from_attributes=True)
-
-
-def get_jwt_payload(
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(http_barare)],
-):
-    try:
-        payload = decode_jwt(credentials.credentials)
-    except InvalidTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="invalid token"
-        )
-    print(payload)
-    return payload
-
-
-async def get_current_auth_user(
-    payload: Annotated[dict, Depends(get_jwt_payload)],
-    session: AsyncSession = Depends(session_manager.session_scope),
-):
-    uid = UUID(payload.get("sub"))
-    user = await session.get(User, uid)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="token invalid"
-        )
-
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
     return user
 
-
-@router.post("/login/", response_model=TokenInfo)
-def auth_user_issue_jwt(
-    user: AuthUser = Depends(validate_auth_user),
+@router.post("/register/", response_model=TokenInfo)
+async def register_user(
+    user: UserCreate,
+    session: AsyncSession = Depends(session_manager.session_scope)
 ):
-    jwt_payload = {"sub": str(user.id), "name": user.name, "email": user.email}
-    token = encode_jwt(jwt_payload)
-    return TokenInfo(
-        access_token=token,
-        token_type="Bearer",
-    )
+    try:
+        db_user = await register_user_in_db(**user.model_dump(), session=session)
+    except IntegrityError:
+        detail = []
+        await session.rollback()
+        if await session.scalar(
+            sql.select(User).where(User.email == user.email)
+        ):
+            detail.append("a user with this email address has already been registered")
+        if await session.scalar(
+            sql.select(User).where(User.name == user.name)
+        ):
+            detail.append("the username is already taken")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=" and ".join(detail) or "Registration error"
+        )
 
+    token = encode_jwt({
+        "sub": str(db_user.id),
+        "name": db_user.name,
+        "email": db_user.email,
+    })
+    return TokenInfo(access_token=token, token_type="Bearer")
 
-@router.get("/users/me/")
-def auth_user_check_self_info(
-    payload: dict = Depends(get_jwt_payload),
-    user: User = Depends(get_current_auth_user),
-):
-    return {
-        "username": user.name,
-        "email": user.email,
-        "logged_in_at": payload.get("iat"),
-    }
