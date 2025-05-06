@@ -16,7 +16,7 @@ _ISSUER = config.project.name
 _AUDIENCE = "my-api"
 
 
-def get_password_hash(password: str) -> str:
+def password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
