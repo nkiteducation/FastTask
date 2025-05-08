@@ -32,7 +32,7 @@ def setup_global_exception_handlers(app: FastAPI):
 
     @app.exception_handler(Exception)
     async def general_exception_handler(request: Request, exc: Exception):
-        logger.exception(f"Unhandled error occurred: {exc}")
+        logger.error(f"Unhandled error occurred: {exc}")
         return ORJSONResponse(
             status_code=500,
             content={"detail": "Internal Server Error"},

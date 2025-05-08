@@ -1,12 +1,12 @@
+from datetime import timedelta
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, HTTPException, status
-from fastapi.security import (
-    OAuth2PasswordBearer,
-)
+from fastapi.security import OAuth2PasswordBearer
+from jwt.exceptions import InvalidTokenError
 from pydantic import BaseModel, EmailStr, SecretStr
-from sqlalchemy import sql
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,21 +29,16 @@ router = APIRouter(prefix="/auth", tags=["JWT"])
 async def validate_auth_user(
     username: Annotated[str, Form()],
     password: Annotated[str, Form()],
-    session=Depends(session_manager.session_scope),
-):
+    session: AsyncSession = Depends(session_manager.session_scope),
+) -> UserDTO:
     unauthed_exc = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="invalid username or password",
+        detail="Invalid username or password",
+        headers={"WWW-Authenticate": "Bearer"},
     )
-    if not (
-        user := await session.scalar(sql.select(User).where(User.name == username))
-    ):
-        raise unauthed_exc
 
-    if not verify_password(
-        password,
-        user.password_hash,
-    ):
+    user = await session.scalar(select(User).where(User.name == username))
+    if not user or not verify_password(password, user.password_hash):
         raise unauthed_exc
 
     return UserDTO.model_validate(user)
@@ -54,9 +49,8 @@ def login_user(user: UserDTO = Depends(validate_auth_user)):
     token = encode_jwt(
         {
             "sub": str(user.id),
-            "username": user.name,
-            "email": user.email,
-        }
+        },
+        timedelta(minutes=15),
     )
     return TokenInfo(access_token=token, token_type="Bearer")
 
@@ -71,39 +65,47 @@ async def register_user_in_db(
     )
     session.add(user)
     await session.commit()
+    await session.refresh(user)
+    return user
 
 
-@router.post("/register", status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=status.HTTP_201_CREATED, response_model=UserRead)
 async def register_user(
     user: UserCreate, session: AsyncSession = Depends(session_manager.session_scope)
 ):
     try:
-        await register_user_in_db(**user.model_dump(), session=session)
+        return await register_user_in_db(**user.model_dump(), session=session)
     except IntegrityError:
-        detail = []
         await session.rollback()
-        if await session.scalar(sql.select(User).where(User.email == user.email)):
+        detail = []
+        if await session.scalar(select(User).where(User.email == user.email)):
             detail.append("a user with this email address has already been registered")
-        if await session.scalar(sql.select(User).where(User.email == user.email)):
+        if await session.scalar(select(User).where(User.name == user.name)):
             detail.append("the username is already taken")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=" and ".join(detail) or "Registration error",
+            detail=" and ".join(detail),
         )
 
 
-def get_payload_jwt(token: str = Depends(oauth2_scheme)):
-    return decode_jwt(token)
+def get_payload_jwt(token: str = Depends(oauth2_scheme)) -> dict:
+    try:
+        return decode_jwt(token)
+    except InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or malformed token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 async def get_auth_user(
-    payload_jwt: dict = Depends(get_payload_jwt),
+    payload: dict = Depends(get_payload_jwt),
     session: AsyncSession = Depends(session_manager.session_scope),
-) -> UserDTO:
-    user_in_db = await session.get(User, UUID(payload_jwt.get("sub")))
-    return UserDTO.model_validate(user_in_db)
+) -> User:
+    return await session.get(User, UUID(payload.get("sub")))
 
 
-@router.post("/me", response_model=UserRead)
-async def me(user: UserDTO = Depends(get_auth_user)):
+@router.get("/me", response_model=UserRead)
+async def me(user: User = Depends(get_auth_user)):
     return UserRead.model_validate(user)

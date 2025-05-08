@@ -24,7 +24,7 @@ def verify_password(password: str, hashed: str) -> bool:
     return pwd_context.verify(password, hashed)
 
 
-def encode_jwt(payload: dict, expire_delta: timedelta = timedelta(minutes=15)) -> str:
+def encode_jwt(payload: dict, expire_delta: timedelta) -> str:
     now = datetime.now(timezone.utc)
     to_encode = {
         **payload,
