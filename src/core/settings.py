@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -61,6 +62,8 @@ class AuthJWTSettings(BaseSettings):
     private_key_path: Path = "src/api/v1/auth/jwt-private.pem"
     public_key_path: Path = "src/api/v1/auth/jwt-public.pem"
     algorithm: str = "RS256"
+    access_token_lifetime: timedelta = timedelta(minutes=15)
+    refresh_token_lifetime: timedelta = timedelta(days=15)
 
 
 class AppSettings(BaseSettings):
