@@ -1,15 +1,25 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
+from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.v1.auth.dependencies import validate_auth_user
 from api.v1.auth.views_utils import (
     create_user_in_the_database,
     generation_registration_error,
+    get_access_token,
+    get_refresh_token,
 )
-from api.v1.shemas import UserCreate
+from api.v1.shemas import UserCreate, UserDTO
+from core.settings import config
 from database.session import session_manager
 
 router = APIRouter(prefix="/auth", tags=["JWT"])
+
+
+class TokenInfo(BaseModel):
+    access_token: str
+    token_type: str = "Bearer"
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
@@ -22,3 +32,20 @@ async def register_user(
     except IntegrityError:
         await session.rollback()
         raise await generation_registration_error(user, session)
+
+
+@router.post("/token", response_model=TokenInfo)
+def login_user(response: Response, user: UserDTO = Depends(validate_auth_user)):
+    response.set_cookie(
+        "refresh-token",
+        get_refresh_token({"sub": str(user.id)}),
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        max_age=config.jwt.refresh_token_lifetime,
+    )
+    return TokenInfo(
+        access_token=get_access_token(
+            {"sub": str(user.id), "username": user.name, "email": user.email}
+        )
+    )
