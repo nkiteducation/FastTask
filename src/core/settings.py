@@ -63,7 +63,7 @@ class AuthJWTSettings(BaseSettings):
     public_key_path: Path = "src/api/v1/auth/jwt-public.pem"
     algorithm: str = "RS256"
     access_token_lifetime: timedelta = timedelta(minutes=15)
-    refresh_token_lifetime: timedelta = timedelta(days=15)
+    refresh_token_lifetime: timedelta = timedelta(days=30)
 
 
 class AppSettings(BaseSettings):
