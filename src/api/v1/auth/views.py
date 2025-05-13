@@ -21,7 +21,7 @@ from core.settings import config
 from database.model import User
 from database.session import session_manager
 
-router = APIRouter(prefix="/auth", tags=["JWT"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 class TokenInfo(BaseModel):
