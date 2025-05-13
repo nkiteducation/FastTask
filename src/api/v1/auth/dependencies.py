@@ -20,7 +20,7 @@ def get_form_user(
 
 
 async def validate_auth_user(
-    email: Annotated[str, Form()],
+    name: Annotated[str, Form()],
     password: Annotated[str, Form()],
     session: AsyncSession = Depends(session_manager.session_scope),
 ) -> UserDTO:
@@ -29,7 +29,7 @@ async def validate_auth_user(
         detail="Invalid username or password",
     )
 
-    user = await session.scalar(select(User).where(User.email == email))
+    user = await session.scalar(select(User).where(User.name == name))
     if not user or not verify_password(password, user.password_hash):
         raise unauthed_exc
 
