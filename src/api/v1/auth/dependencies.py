@@ -1,11 +1,12 @@
 from typing import Annotated
 
-from fastapi import Depends, Form, HTTPException, status
+from fastapi import Cookie, Depends, Form, HTTPException, status
+from jwt import InvalidTokenError
 from pydantic import EmailStr, SecretStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.v1.auth.utils import verify_password
+from api.v1.auth.utils import decode_jwt, verify_password
 from api.v1.shemas import UserCreate, UserDTO
 from database.model import User
 from database.session import session_manager
@@ -34,3 +35,23 @@ async def validate_auth_user(
         raise unauthed_exc
 
     return UserDTO.model_validate(user)
+
+
+def verification_refresh_jwt(
+    token: Annotated[
+        str | None, Cookie(alias="refresh-token", include_in_schema=False)
+    ] = None,
+):
+    if token is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cookie ‘refresh_token’ not found",
+        )
+    try:
+        return decode_jwt(token)
+    except InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
