@@ -1,5 +1,5 @@
-
 from uuid import UUID
+
 from fastapi import APIRouter, Depends, Response, status
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
