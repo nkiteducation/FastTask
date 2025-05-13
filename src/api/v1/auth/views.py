@@ -5,7 +5,11 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.v1.auth.dependencies import validate_auth_user, verification_refresh_jwt
+from api.v1.auth.dependencies import (
+    validate_auth_user,
+    verification_access_jwt,
+    verification_refresh_jwt,
+)
 from api.v1.auth.views_utils import (
     create_user_in_the_database,
     generation_registration_error,
@@ -65,3 +69,8 @@ async def refresh_access_token(
             {"sub": str(user.id), "username": user.name, "email": user.email}
         )
     )
+
+
+@router.get("/me")
+async def me(me: dict = Depends(verification_access_jwt)):
+    return "Ok"
