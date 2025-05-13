@@ -1,9 +1,11 @@
+
+from uuid import UUID
 from fastapi import APIRouter, Depends, Response, status
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.v1.auth.dependencies import validate_auth_user
+from api.v1.auth.dependencies import validate_auth_user, verification_refresh_jwt
 from api.v1.auth.views_utils import (
     create_user_in_the_database,
     generation_registration_error,
@@ -12,6 +14,7 @@ from api.v1.auth.views_utils import (
 )
 from api.v1.shemas import UserCreate, UserDTO
 from core.settings import config
+from database.model import User
 from database.session import session_manager
 
 router = APIRouter(prefix="/auth", tags=["JWT"])
@@ -44,6 +47,19 @@ def login_user(response: Response, user: UserDTO = Depends(validate_auth_user)):
         samesite="strict",
         max_age=config.jwt.refresh_token_lifetime,
     )
+    return TokenInfo(
+        access_token=get_access_token(
+            {"sub": str(user.id), "username": user.name, "email": user.email}
+        )
+    )
+
+
+@router.post("/refresh", response_model=TokenInfo)
+async def refresh_access_token(
+    payload: dict = Depends(verification_refresh_jwt),
+    session: AsyncSession = Depends(session_manager.session_scope),
+):
+    user = await session.get(User, UUID(payload.get("sub")))
     return TokenInfo(
         access_token=get_access_token(
             {"sub": str(user.id), "username": user.name, "email": user.email}
