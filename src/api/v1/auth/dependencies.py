@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import Cookie, Depends, Form, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
 from pydantic import EmailStr, SecretStr
 from sqlalchemy import select
@@ -11,17 +12,19 @@ from api.v1.shemas import UserCreate, UserDTO
 from database.model import User
 from database.session import session_manager
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
+
 
 def get_form_user(
-    name: Annotated[str, Form()],
+    username: Annotated[str, Form()],
     email: Annotated[EmailStr, Form()],
     password: Annotated[SecretStr, Form()],
 ):
-    return UserCreate(name=name, email=email, password=password)
+    return UserCreate(name=username, email=email, password=password)
 
 
 async def validate_auth_user(
-    name: Annotated[str, Form()],
+    username: Annotated[str, Form()],
     password: Annotated[str, Form()],
     session: AsyncSession = Depends(session_manager.session_scope),
 ) -> UserDTO:
@@ -30,7 +33,7 @@ async def validate_auth_user(
         detail="Invalid username or password",
     )
 
-    user = await session.scalar(select(User).where(User.name == name))
+    user = await session.scalar(select(User).where(User.name == username))
     if not user or not verify_password(password, user.password_hash):
         raise unauthed_exc
 
@@ -53,5 +56,16 @@ def verification_refresh_jwt(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+def verification_access_jwt(token: Annotated[str, Depends(oauth2_scheme)]):
+    try:
+        return decode_jwt(token)
+    except InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired access token",
             headers={"WWW-Authenticate": "Bearer"},
         )
