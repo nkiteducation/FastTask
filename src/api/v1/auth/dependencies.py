@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.v1.auth.utils import decode_jwt, verify_password
-from api.v1.shemas import UserCreate, UserDTO
+from api.v1.users.shemas import UserCreate, UserDTO
 from database.model import User
 from database.session import session_manager
 
