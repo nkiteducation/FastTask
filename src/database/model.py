@@ -65,13 +65,11 @@ class Board(CoreModel, UUIDMixin, TimestampMixin):
         secondary="user_using_board",
         viewonly=True,
         back_populates="boards",
-        lazy="selectin",
     )
     tasks: Mapped[list["Task"]] = relationship(
         back_populates="board",
         order_by="Task.deadline",
         cascade="all, delete-orphan",
-        lazy="selectin",
     )
 
 
