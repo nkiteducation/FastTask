@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import Cookie, Depends, Form, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -69,3 +70,11 @@ def verification_access_jwt(token: Annotated[str, Depends(oauth2_scheme)]):
             detail="Invalid or expired access token",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+async def get_verification_user(
+    payload: dict = Depends(verification_access_jwt),
+    session: AsyncSession = Depends(session_manager.session_scope),
+):
+    user_in_db = await session.get(User, UUID(payload.get("sub")))
+    return UserDTO.model_validate(user_in_db)
