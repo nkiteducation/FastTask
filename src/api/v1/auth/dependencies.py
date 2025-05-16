@@ -76,5 +76,4 @@ async def get_verification_user(
     payload: dict = Depends(verification_access_jwt),
     session: AsyncSession = Depends(session_manager.session_scope),
 ):
-    user_in_db = await session.get(User, UUID(payload.get("sub")))
-    return UserDTO.model_validate(user_in_db)
+    return await session.get(User, UUID(payload.get("sub")))
