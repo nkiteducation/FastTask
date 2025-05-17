@@ -31,9 +31,9 @@ class CoreModel(DeclarativeBase, AsyncAttrs):
 
     @declared_attr
     def __tablename__(cls) -> str:
-        name = cls.__name__
-        s1 = "".join(["_" + c.lower() if c.isupper() else c for c in name]).lstrip("_")
-        return s1
+        return "".join(
+            ["_" + c.lower() if c.isupper() else c for c in cls.__name__]
+        ).lstrip("_")
 
 
 # -------------------- ENUMS --------------------
@@ -59,7 +59,10 @@ class Board(CoreModel, UUIDMixin, TimestampMixin):
     title: Mapped[str]
 
     users: Mapped[list["UserUsingBoard"]] = relationship(
-        back_populates="board", lazy="selectin"
+        back_populates="board",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
     participants: Mapped[list["User"]] = relationship(
         secondary="user_using_board",
@@ -70,14 +73,15 @@ class Board(CoreModel, UUIDMixin, TimestampMixin):
         back_populates="board",
         order_by="Task.deadline",
         cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
 
 class Task(CoreModel, UUIDMixin, TimestampMixin):
     title: Mapped[str]
-    description: Mapped[str | None]
+    description: Mapped[Optional[str]]
 
-    deadline: Mapped[datetime | None] = mapped_column(index=True)
+    deadline: Mapped[Optional[datetime]] = mapped_column(index=True)
     priority: Mapped[Priority] = mapped_column(
         SAEnum(Priority, name="priority_enum"), default=Priority.MEDIUM
     )
@@ -88,13 +92,17 @@ class Task(CoreModel, UUIDMixin, TimestampMixin):
     board_id: Mapped[UUID] = mapped_column(
         ForeignKey("board.id", ondelete="CASCADE"), index=True
     )
-    board: Mapped["Board"] = relationship(back_populates="tasks")
+    board: Mapped["Board"] = relationship(
+        back_populates="tasks",
+        passive_deletes=True,
+    )
 
-    assigned_user_id: Mapped[UUID | None] = mapped_column(
+    assigned_user_id: Mapped[Optional[UUID]] = mapped_column(
         ForeignKey("user.id", ondelete="SET NULL"), nullable=True, index=True
     )
     assigned_user: Mapped[Optional["User"]] = relationship(
-        back_populates="assigned_tasks"
+        back_populates="assigned_tasks",
+        passive_deletes=True,
     )
 
 
@@ -109,8 +117,14 @@ class UserUsingBoard(CoreModel):
         SAEnum(Role, name="role_enum"), default=Role.USER
     )
 
-    profil: Mapped["User"] = relationship(back_populates="board_links")
-    board: Mapped["Board"] = relationship(back_populates="users")
+    user: Mapped["User"] = relationship(
+        back_populates="board_links",
+        passive_deletes=True,
+    )
+    board: Mapped["Board"] = relationship(
+        back_populates="users",
+        passive_deletes=True,
+    )
 
 
 class User(CoreModel, UUIDMixin, TimestampMixin):
@@ -118,7 +132,11 @@ class User(CoreModel, UUIDMixin, TimestampMixin):
     email: Mapped[str] = mapped_column(unique=True)
     password_hash: Mapped[str]
 
-    board_links: Mapped[list["UserUsingBoard"]] = relationship(back_populates="profil")
+    board_links: Mapped[list["UserUsingBoard"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
     boards: Mapped[list["Board"]] = relationship(
         secondary="user_using_board",
         viewonly=True,
@@ -126,6 +144,7 @@ class User(CoreModel, UUIDMixin, TimestampMixin):
     )
     assigned_tasks: Mapped[list["Task"]] = relationship(
         back_populates="assigned_user",
-        foreign_keys=[Task.assigned_user_id],
+        foreign_keys="[Task.assigned_user_id]",
         order_by="Task.deadline.desc()",
+        passive_deletes=True,
     )
