@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,9 +12,10 @@ from api.v1.auth.dependencies import (
 )
 from api.v1.auth.service import (
     create_user_in_the_database,
-    generation_registration_error,
     get_access_token,
     get_refresh_token,
+    is_email_taken,
+    is_name_taken,
 )
 from api.v1.users.shemas import UserCreate, UserDTO
 from core.settings import config
@@ -38,7 +39,15 @@ async def register_user(
         await create_user_in_the_database(**user.model_dump(), session=session)
     except IntegrityError:
         await session.rollback()
-        raise await generation_registration_error(user, session)
+        detail = []
+        if await is_email_taken(user.email, session):
+            detail.append("A user with this email address has already been registered")
+        if await is_name_taken(user.name, session):
+            detail.append("The username is already taken")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=detail,
+        )
 
 
 @router.post("/token", response_model=TokenInfo)

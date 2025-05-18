@@ -2,7 +2,11 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import Cookie, Depends, Form, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import (
+    HTTPAuthorizationCredentials,
+    HTTPBearer,
+    OAuth2PasswordBearer,
+)
 from jwt import InvalidTokenError
 from pydantic import EmailStr, SecretStr
 from sqlalchemy import select
@@ -14,6 +18,7 @@ from database.model import User
 from database.session import session_manager
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/token")
+security = HTTPBearer()
 
 
 def get_form_user(
@@ -61,9 +66,11 @@ def verification_refresh_jwt(
         )
 
 
-def verification_access_jwt(token: Annotated[str, Depends(oauth2_scheme)]):
+def verification_access_jwt(
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
+):
     try:
-        return decode_jwt(token)
+        return decode_jwt(credentials.credentials)
     except InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

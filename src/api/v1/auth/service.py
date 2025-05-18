@@ -1,7 +1,6 @@
 from datetime import timedelta
 from typing import Callable
 
-from fastapi import HTTPException, status
 from pydantic import EmailStr, SecretStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +10,8 @@ from core.settings import config
 from database.model import User
 
 TOKEN_TYPE_FIELD = "type"
+ACCESS_TYPE = "access"
+REFRESH_TYPE = "refresh"
 
 
 async def create_user_in_the_database(
@@ -26,16 +27,12 @@ async def create_user_in_the_database(
     await session.commit()
 
 
-async def generation_registration_error(user, session: AsyncSession):
-    detail = []
-    if await session.scalar(select(User).where(User.email == user.email)):
-        detail.append("a user with this email address has already been registered")
-    if await session.scalar(select(User).where(User.name == user.name)):
-        detail.append("the username is already taken")
-    return HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail=" and ".join(detail),
-    )
+async def is_email_taken(email: str, session: AsyncSession) -> bool:
+    return await session.scalar(select(User).where(User.email == email)) is not None
+
+
+async def is_name_taken(name: str, session: AsyncSession) -> bool:
+    return await session.scalar(select(User).where(User.name == name)) is not None
 
 
 def jwt_factory(
@@ -50,5 +47,13 @@ def jwt_factory(
     return create_token
 
 
-get_access_token = jwt_factory("access", config.jwt.access_token_lifetime)
-get_refresh_token = jwt_factory("refresh", config.jwt.refresh_token_lifetime)
+def build_jwt_payload(user: User) -> dict:
+    return {
+        "sub": str(user.id),
+        "username": user.name,
+        "email": user.email,
+    }
+
+
+get_access_token = jwt_factory(ACCESS_TYPE, config.jwt.access_token_lifetime)
+get_refresh_token = jwt_factory(REFRESH_TYPE, config.jwt.refresh_token_lifetime)
