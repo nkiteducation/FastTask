@@ -58,16 +58,15 @@ class Status(enum.Enum):
 class Board(CoreModel, UUIDMixin, TimestampMixin):
     title: Mapped[str]
 
-    users: Mapped[list["UserUsingBoard"]] = relationship(
+    memberships: Mapped[list["UserUsingBoard"]] = relationship(
         back_populates="board",
-        lazy="selectin",
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
-    participants: Mapped[list["User"]] = relationship(
+    members: Mapped[list["User"]] = relationship(
         secondary="user_using_board",
         viewonly=True,
-        back_populates="boards",
+        back_populates="member_boards",
     )
     tasks: Mapped[list["Task"]] = relationship(
         back_populates="board",
@@ -118,11 +117,11 @@ class UserUsingBoard(CoreModel):
     )
 
     user: Mapped["User"] = relationship(
-        back_populates="board_links",
+        back_populates="memberships",
         passive_deletes=True,
     )
     board: Mapped["Board"] = relationship(
-        back_populates="users",
+        back_populates="memberships",
         passive_deletes=True,
     )
 
@@ -132,15 +131,15 @@ class User(CoreModel, UUIDMixin, TimestampMixin):
     email: Mapped[str] = mapped_column(unique=True)
     password_hash: Mapped[str]
 
-    board_links: Mapped[list["UserUsingBoard"]] = relationship(
+    memberships: Mapped[list["UserUsingBoard"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
-    boards: Mapped[list["Board"]] = relationship(
+    member_boards: Mapped[list["Board"]] = relationship(
         secondary="user_using_board",
         viewonly=True,
-        back_populates="participants",
+        back_populates="members",
     )
     assigned_tasks: Mapped[list["Task"]] = relationship(
         back_populates="assigned_user",
