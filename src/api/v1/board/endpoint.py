@@ -62,48 +62,65 @@ async def delete_board(
     await session.commit()
 
 
+def serialize_participant(link: UserUsingBoard) -> dict:
+    return {
+        "id": str(link.user.id),
+        "role": link.role,
+    }
+
+
+def serialize_task(task) -> dict:
+    return {
+        "id": str(task.id),
+    }
+
+
+def serialize_board(board) -> dict:
+    return {
+        "id": str(board.id),
+        "title": board.title,
+        "created_at": board.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+        "updated_at": board.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
+        "participants": [serialize_participant(link) for link in board.memberships],
+        "tasks": [serialize_task(task) for task in board.tasks],
+    }
+
+
 @router.get(
     "/",
     status_code=status.HTTP_200_OK,
 )
-async def get_boards(
+async def get_all_boards(
     user: User = Depends(get_verification_user),
     session: AsyncSession = Depends(session_manager.session_scope),
 ):
     result = await session.execute(
         select(Board)
         .options(
-            selectinload(Board.users_links).selectinload(UserUsingBoard.user),
-            selectinload(Board.participants),
+            selectinload(Board.memberships).selectinload(UserUsingBoard.user),
             selectinload(Board.tasks),
         )
         .join(UserUsingBoard, UserUsingBoard.board_id == Board.id)
         .where(UserUsingBoard.user_id == user.id)
     )
     boards = result.scalars().unique().all()
-    return {
-        board.title: {
-            "id": str(board.id),
-            "participants": {
-                link.user.name: {
-                    "id": str(link.user.id),
-                    "role": link.role,
-                }
-                for link in board.users_links
-            },
-            "tasks": {
-                task.title: {
-                    "id": str(task.id),
-                    "description": task.description,
-                    "deadline": task.deadline.isoformat(),
-                    "priority": task.priority,
-                    "status": task.status,
-                    "assigned_id": str(task.assigned_user.id)
-                    if task.assigned_user
-                    else None,
-                }
-                for task in board.tasks
-            },
-        }
-        for board in boards
-    }
+    return {board.title: serialize_board(board) for board in boards}
+
+
+@router.get(
+    "/{board_id}",
+    status_code=status.HTTP_200_OK,
+)
+async def get_boards(
+    board_id: UUID,
+    user: User = Depends(get_verification_user),
+    session: AsyncSession = Depends(session_manager.session_scope),
+):
+    result = await session.execute(select(Board).where(Board.id == board_id))
+    board = result.scalar_one_or_none()
+    if board is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Board with id {board_id} not found",
+        )
+    return serialize_board(board)
